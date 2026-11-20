@@ -1,0 +1,766 @@
+{
+  "normalized_input": {
+    "calendar_type": "solar",
+    "birth_time_input": "1999-03-11 05:00",
+    "local_solar_time": "1999-03-11 05:00",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "gender": "男",
+    "longitude": 108.05,
+    "use_true_solar_time": true,
+    "late_zi_rule": "same_day",
+    "yun_sect": 2,
+    "query_years": [
+      2023,
+      2026,
+      2027,
+      2028
+    ]
+  },
+  "ruleset": {
+    "id": "bazi-ziping-v1",
+    "year_boundary": "立春（精确到时刻）",
+    "month_boundary": "十二节（精确到时刻）",
+    "jieqi_timezone": "UTC+08:00",
+    "late_zi_rule": "夜子时：23:00-24:00 日柱仍取当日，时柱取子时（时干按次日起）",
+    "yun_method": "精确到分钟：出生至节令的时间差，4320 分钟（3 天）折 1 年，按比例折算月日时",
+    "true_solar_time": "经度差×4 分钟 + 均时差（NOAA 近似）",
+    "age": "虚岁（出生年记 1 岁）",
+    "engine": "lunar_python"
+  },
+  "chart": {
+    "times": {
+      "local_civil_time": "1999-03-11 05:00",
+      "utc_offset_hours": 7.0,
+      "beijing_time": "1999-03-11 06:00",
+      "true_solar_time": {
+        "longitude": 108.05,
+        "zone_meridian": 105.0,
+        "longitude_correction_minutes": 12.2,
+        "equation_of_time_minutes": -10.72,
+        "total_correction_minutes": 1.48,
+        "value": "1999-03-11 05:01:28"
+      },
+      "chart_time": "1999-03-11 05:01:28"
+    },
+    "jie_bounds": {
+      "prev": {
+        "name": "惊蛰",
+        "beijing_time": "1999-03-06 08:57:42",
+        "hours_since": 117.04
+      },
+      "next": {
+        "name": "清明",
+        "beijing_time": "1999-04-05 13:44:37",
+        "hours_until": 607.74
+      }
+    },
+    "pillars": {
+      "year": {
+        "name": "年柱",
+        "ganzhi": "己卯",
+        "stem": "己",
+        "branch": "卯",
+        "stem_element": "土",
+        "branch_element": "木",
+        "stem_ten_god": "正官",
+        "hidden_stems": [
+          {
+            "stem": "乙",
+            "type": "本气",
+            "element": "木",
+            "ten_god": "伤官"
+          }
+        ],
+        "nayin": "城头土",
+        "day_master_stage": "死",
+        "self_stage": "病"
+      },
+      "month": {
+        "name": "月柱",
+        "ganzhi": "丁卯",
+        "stem": "丁",
+        "branch": "卯",
+        "stem_element": "火",
+        "branch_element": "木",
+        "stem_ten_god": "正财",
+        "hidden_stems": [
+          {
+            "stem": "乙",
+            "type": "本气",
+            "element": "木",
+            "ten_god": "伤官"
+          }
+        ],
+        "nayin": "炉中火",
+        "day_master_stage": "死",
+        "self_stage": "病"
+      },
+      "day": {
+        "name": "日柱",
+        "ganzhi": "壬戌",
+        "stem": "壬",
+        "branch": "戌",
+        "stem_element": "水",
+        "branch_element": "土",
+        "stem_ten_god": "日主",
+        "hidden_stems": [
+          {
+            "stem": "戊",
+            "type": "本气",
+            "element": "土",
+            "ten_god": "七杀"
+          },
+          {
+            "stem": "辛",
+            "type": "中气",
+            "element": "金",
+            "ten_god": "正印"
+          },
+          {
+            "stem": "丁",
+            "type": "余气",
+            "element": "火",
+            "ten_god": "正财"
+          }
+        ],
+        "nayin": "大海水",
+        "day_master_stage": "冠带",
+        "self_stage": "冠带"
+      },
+      "hour": {
+        "name": "时柱",
+        "ganzhi": "癸卯",
+        "stem": "癸",
+        "branch": "卯",
+        "stem_element": "水",
+        "branch_element": "木",
+        "stem_ten_god": "劫财",
+        "hidden_stems": [
+          {
+            "stem": "乙",
+            "type": "本气",
+            "element": "木",
+            "ten_god": "伤官"
+          }
+        ],
+        "nayin": "金箔金",
+        "day_master_stage": "死",
+        "self_stage": "长生"
+      }
+    },
+    "bazi": "己卯 丁卯 壬戌 癸卯",
+    "day_master": {
+      "stem": "壬",
+      "element": "水",
+      "polarity": "阳"
+    },
+    "xun_kong": {
+      "day": "子丑",
+      "year": "申酉"
+    },
+    "wangxiang_xiuqiu": {
+      "month_branch": "卯",
+      "states": {
+        "木": "旺",
+        "火": "相",
+        "土": "死",
+        "金": "囚",
+        "水": "休"
+      }
+    },
+    "element_counts": {
+      "visible": {
+        "木": 3,
+        "火": 1,
+        "土": 2,
+        "金": 0,
+        "水": 2
+      },
+      "weighted": {
+        "木": 3.0,
+        "火": 1.1,
+        "土": 1.6,
+        "金": 0.3,
+        "水": 2.0
+      },
+      "method": "visible：4 天干 + 4 地支本气五行各计 1；weighted：天干各计 1，每个地支总计 1 分摊给藏干（单藏 1.0；两藏 0.7/0.3；三藏 0.6/0.3/0.1）。仅为统计口径，不等于旺衰结论。"
+    },
+    "strength_factors": {
+      "day_master": "壬",
+      "day_master_element": "水",
+      "month_command": {
+        "month_branch": "卯",
+        "season_element": "木",
+        "day_master_state": "休",
+        "day_master_stage_in_month": "死"
+      },
+      "roots": [],
+      "visible_support_stems": [
+        "时柱"
+      ],
+      "heuristic_score": -0.2,
+      "heuristic_note": "启发式分数（得令 + 通根 + 透出比印 − 透出克泄耗），>0 偏强、<0 偏弱，仅作参考；身强身弱、格局与喜用必须结合原局由解读者判断。"
+    },
+    "natal_interactions": [
+      {
+        "type": "六合",
+        "between": [
+          "年柱",
+          "日柱"
+        ],
+        "detail": "卯戌合（火）"
+      },
+      {
+        "type": "天干五合",
+        "between": [
+          "月柱",
+          "日柱"
+        ],
+        "detail": "丁壬合（化木）"
+      },
+      {
+        "type": "六合",
+        "between": [
+          "月柱",
+          "日柱"
+        ],
+        "detail": "卯戌合（火）"
+      },
+      {
+        "type": "天干相冲",
+        "between": [
+          "月柱",
+          "时柱"
+        ],
+        "detail": "丁癸冲"
+      },
+      {
+        "type": "六合",
+        "between": [
+          "日柱",
+          "时柱"
+        ],
+        "detail": "戌卯合（火）"
+      }
+    ],
+    "dayun": {
+      "direction": "逆排",
+      "start": {
+        "years": 1,
+        "months": 7,
+        "days": 15,
+        "hours": 6,
+        "start_date": "2000-10-26 12:00",
+        "method": "精确到分钟：出生至节令的时间差，4320 分钟（3 天）折 1 年，按比例折算月日时"
+      },
+      "pillars": [
+        {
+          "index": 1,
+          "ganzhi": "丙寅",
+          "stem_ten_god": "偏财",
+          "branch_main_ten_god": "食神",
+          "nayin": "炉中火",
+          "day_master_stage": "病",
+          "start_year": 2000,
+          "end_year": 2009,
+          "start_age_xu": 2,
+          "end_age_xu": 11,
+          "start_date_approx": "2000-10-26"
+        },
+        {
+          "index": 2,
+          "ganzhi": "乙丑",
+          "stem_ten_god": "伤官",
+          "branch_main_ten_god": "正官",
+          "nayin": "海中金",
+          "day_master_stage": "衰",
+          "start_year": 2010,
+          "end_year": 2019,
+          "start_age_xu": 12,
+          "end_age_xu": 21,
+          "start_date_approx": "2010-10-26"
+        },
+        {
+          "index": 3,
+          "ganzhi": "甲子",
+          "stem_ten_god": "食神",
+          "branch_main_ten_god": "劫财",
+          "nayin": "海中金",
+          "day_master_stage": "帝旺",
+          "start_year": 2020,
+          "end_year": 2029,
+          "start_age_xu": 22,
+          "end_age_xu": 31,
+          "start_date_approx": "2020-10-26"
+        },
+        {
+          "index": 4,
+          "ganzhi": "癸亥",
+          "stem_ten_god": "劫财",
+          "branch_main_ten_god": "比肩",
+          "nayin": "大海水",
+          "day_master_stage": "临官",
+          "start_year": 2030,
+          "end_year": 2039,
+          "start_age_xu": 32,
+          "end_age_xu": 41,
+          "start_date_approx": "2030-10-26"
+        },
+        {
+          "index": 5,
+          "ganzhi": "壬戌",
+          "stem_ten_god": "比肩",
+          "branch_main_ten_god": "七杀",
+          "nayin": "大海水",
+          "day_master_stage": "冠带",
+          "start_year": 2040,
+          "end_year": 2049,
+          "start_age_xu": 42,
+          "end_age_xu": 51,
+          "start_date_approx": "2040-10-26"
+        },
+        {
+          "index": 6,
+          "ganzhi": "辛酉",
+          "stem_ten_god": "正印",
+          "branch_main_ten_god": "正印",
+          "nayin": "石榴木",
+          "day_master_stage": "沐浴",
+          "start_year": 2050,
+          "end_year": 2059,
+          "start_age_xu": 52,
+          "end_age_xu": 61,
+          "start_date_approx": "2050-10-26"
+        },
+        {
+          "index": 7,
+          "ganzhi": "庚申",
+          "stem_ten_god": "偏印",
+          "branch_main_ten_god": "偏印",
+          "nayin": "石榴木",
+          "day_master_stage": "长生",
+          "start_year": 2060,
+          "end_year": 2069,
+          "start_age_xu": 62,
+          "end_age_xu": 71,
+          "start_date_approx": "2060-10-26"
+        },
+        {
+          "index": 8,
+          "ganzhi": "己未",
+          "stem_ten_god": "正官",
+          "branch_main_ten_god": "正官",
+          "nayin": "天上火",
+          "day_master_stage": "养",
+          "start_year": 2070,
+          "end_year": 2079,
+          "start_age_xu": 72,
+          "end_age_xu": 81,
+          "start_date_approx": "2070-10-26"
+        },
+        {
+          "index": 9,
+          "ganzhi": "戊午",
+          "stem_ten_god": "七杀",
+          "branch_main_ten_god": "正财",
+          "nayin": "天上火",
+          "day_master_stage": "胎",
+          "start_year": 2080,
+          "end_year": 2089,
+          "start_age_xu": 82,
+          "end_age_xu": 91,
+          "start_date_approx": "2080-10-26"
+        }
+      ]
+    },
+    "liunian": [
+      {
+        "year": 2023,
+        "ganzhi": "癸卯",
+        "age_xu": 25,
+        "stem_ten_god": "劫财",
+        "branch_hidden_ten_gods": [
+          {
+            "stem": "乙",
+            "ten_god": "伤官"
+          }
+        ],
+        "nayin": "金箔金",
+        "day_master_stage": "死",
+        "dayun": "甲子",
+        "interactions": [
+          {
+            "type": "天干五合",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "己甲合（化土）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "月柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "天干相冲",
+            "between": [
+              "月柱",
+              "流年"
+            ],
+            "detail": "丁癸冲"
+          },
+          {
+            "type": "六合",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "戌卯合（火）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "时柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "伏吟",
+            "between": [
+              "时柱",
+              "流年"
+            ],
+            "detail": "癸卯与癸卯干支相同"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "大运",
+              "流年"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "ganzhi": "丙午",
+        "age_xu": 28,
+        "stem_ten_god": "偏财",
+        "branch_hidden_ten_gods": [
+          {
+            "stem": "丁",
+            "ten_god": "正财"
+          },
+          {
+            "stem": "己",
+            "ten_god": "正官"
+          }
+        ],
+        "nayin": "天河水",
+        "day_master_stage": "胎",
+        "dayun": "甲子",
+        "interactions": [
+          {
+            "type": "天干五合",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "己甲合（化土）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "六破",
+            "between": [
+              "年柱",
+              "流年"
+            ],
+            "detail": "卯午破"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "月柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "六破",
+            "between": [
+              "月柱",
+              "流年"
+            ],
+            "detail": "卯午破"
+          },
+          {
+            "type": "天干相冲",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "壬丙冲"
+          },
+          {
+            "type": "半合",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "戌午半合（寅午戌火局缺寅）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "时柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "六破",
+            "between": [
+              "时柱",
+              "流年"
+            ],
+            "detail": "卯午破"
+          },
+          {
+            "type": "六冲",
+            "between": [
+              "大运",
+              "流年"
+            ],
+            "detail": "子午冲"
+          }
+        ]
+      },
+      {
+        "year": 2027,
+        "ganzhi": "丁未",
+        "age_xu": 29,
+        "stem_ten_god": "正财",
+        "branch_hidden_ten_gods": [
+          {
+            "stem": "己",
+            "ten_god": "正官"
+          },
+          {
+            "stem": "丁",
+            "ten_god": "正财"
+          },
+          {
+            "stem": "乙",
+            "ten_god": "伤官"
+          }
+        ],
+        "nayin": "天河水",
+        "day_master_stage": "养",
+        "dayun": "甲子",
+        "interactions": [
+          {
+            "type": "天干五合",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "己甲合（化土）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "半合",
+            "between": [
+              "年柱",
+              "流年"
+            ],
+            "detail": "卯未半合（亥卯未木局缺亥）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "月柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "半合",
+            "between": [
+              "月柱",
+              "流年"
+            ],
+            "detail": "卯未半合（亥卯未木局缺亥）"
+          },
+          {
+            "type": "天干五合",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "壬丁合（化木）"
+          },
+          {
+            "type": "六破",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "戌未破"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "日柱",
+              "流年"
+            ],
+            "detail": "戌未刑（丑戌未恃势之刑，两字）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "时柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "天干相冲",
+            "between": [
+              "时柱",
+              "流年"
+            ],
+            "detail": "癸丁冲"
+          },
+          {
+            "type": "半合",
+            "between": [
+              "时柱",
+              "流年"
+            ],
+            "detail": "卯未半合（亥卯未木局缺亥）"
+          },
+          {
+            "type": "六害",
+            "between": [
+              "大运",
+              "流年"
+            ],
+            "detail": "子未害"
+          }
+        ]
+      },
+      {
+        "year": 2028,
+        "ganzhi": "戊申",
+        "age_xu": 30,
+        "stem_ten_god": "七杀",
+        "branch_hidden_ten_gods": [
+          {
+            "stem": "庚",
+            "ten_god": "偏印"
+          },
+          {
+            "stem": "壬",
+            "ten_god": "比肩"
+          },
+          {
+            "stem": "戊",
+            "ten_god": "七杀"
+          }
+        ],
+        "nayin": "大驿土",
+        "day_master_stage": "长生",
+        "dayun": "甲子",
+        "interactions": [
+          {
+            "type": "天干五合",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "己甲合（化土）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "年柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "月柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "相刑",
+            "between": [
+              "时柱",
+              "大运"
+            ],
+            "detail": "子卯刑（无礼之刑）"
+          },
+          {
+            "type": "天干五合",
+            "between": [
+              "时柱",
+              "流年"
+            ],
+            "detail": "癸戊合（化火）"
+          },
+          {
+            "type": "半合",
+            "between": [
+              "大运",
+              "流年"
+            ],
+            "detail": "子申半合（申子辰水局缺辰）"
+          }
+        ]
+      }
+    ],
+    "self_check": {
+      "pillars_valid_jiazi": true,
+      "month_stem_by_wuhu_dun": true,
+      "hour_stem_by_wushu_dun": true,
+      "hour_branch_matches_chart_time": true,
+      "dayun_direction_matches_rule": true
+    }
+  },
+  "warnings": [
+    "排盘时间 05:01 距时辰交界不足 15 分钟，建议同时排相邻时辰对比。",
+    "出生地非 UTC+8：年、月柱与起运已换算为北京时间判断节气，日、时柱按出生地时间。"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "calendar_type": "solar",
+  "birth_time": "1999-03-11 05:00",
+  "is_leap_month": false,
+  "gender": "男",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "longitude": 108.05,
+  "use_true_solar_time": true,
+  "late_zi_rule": "same_day",
+  "query_years": [2023, 2026, 2027, 2028]
+}
