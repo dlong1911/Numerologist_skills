@@ -95,6 +95,8 @@ python "bazi/scripts/bazi_cli.py" \
 - `birth_time`、`gender` 必填；缺出生时间或性别时脚本直接报错，不代填。
 - `calendar_type=lunar` 时 `birth_time` 写农历年月日（出生地日期），闰月出生同时传 `"is_leap_month": true`；不存在的闰月会报错。
 - `timezone` 为 IANA 时区名，默认 `Asia/Shanghai`；海外出生（如越南 `Asia/Ho_Chi_Minh`）必须传。
+- 越南出生（`Asia/Ho_Chi_Minh`）：脚本不用 tzdata 的南越历史，而用 `vn_calendar.py` 的南北分表（含来源）。1955-07 至 1959-12、1967-08-08 至 1975-06-13 南北时区不同，须传 `birth_region`（`north`/`south`）或出生地 `latitude`（>17°N 为北），否则报错。1947-1967 年北方时区来源互相矛盾，输出会带警告。
+- `lunar_calendar`：农历输入的换算口径，越南时区默认 `vn`（越南阴历：1967-08-08 前同中国历；之后北方按 UTC+7，南方 1975-06-13 前仍按 UTC+8），其他时区默认 `cn`。
 - `longitude` 为出生地经度（东经为正）；传了就默认启用真太阳时，可用 `use_true_solar_time: false` 关闭。
 - `late_zi_rule` 默认 `same_day`（夜子时：23 点后日柱不换，时干按次日起）；`next_day` 为 23 点起换日。
 - `yun_sect` 起运算法：`2`（默认，按分钟精确折算）或 `1`（按天数/时辰传统折算）。

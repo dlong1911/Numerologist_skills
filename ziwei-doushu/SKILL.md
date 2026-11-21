@@ -146,6 +146,7 @@ python "ziwei-doushu/scripts/ziwei_cli.py" \
 - `late_zi_rule` 默认 `next_day`（23:00 起算次日子时）；只有用户明确沿用不换日的口径时才传 `same_day`。
 - `leap_month_rule` 只在出生于闰月时起作用。不传时默认 `split_15`（闰月十五日及以前按本月，十六日起按下月）；用户已有既定口径时改传 `current`（整月按本月）或 `next`（整月按下月）。输出里 `normalized_input.leap_month_rule_source` 标明是默认（`default`）还是指定（`explicit`），给用户讲口径时照实说明用了哪种算法。
 - `query_year` 可选，填要看的农历年份，脚本会算出该年虚岁、所在大限及大限四化、流年命宫及流年四化。
+- `lunar_calendar` 默认 `vn`（越南阴历，见 bazi/scripts/vn_calendar.py 来源说明），`cn` 为中国农历（lunar_python，与 iztro 一致）。1968-1975 年南北阴历可能差一天，此时须传 `birth_region`（`north`/`south`）或 `latitude`。
 - 时辰不确定时，按候选时辰分别跑脚本，对比差异盘，不要硬定。
 - 输出 `warnings` 提示出生时间靠近时辰交界、子时换日、闰月口径时，要把这些写进给用户的口径说明。
 
@@ -173,6 +174,9 @@ python "ziwei-doushu/scripts/ziwei_cli.py" \
 | `chart.star_index` | 每颗星所在地支，查星用 |
 | `chart.self_check` | 自检结果：十四主星齐全、紫微同宫组合合法（如紫微七杀只在巳亥） |
 | `horoscope` | 仅在传了 `query_year` 时出现：虚岁、当前大限及大限四化、流年命宫及流年四化 |
+| `chart.xunkong` / `chart.jielu` | Tuần (旬空, theo năm can chi) / Triệt (截路, theo can năm); mỗi cung có cờ `xunkong`, `jielu` |
+| `palaces[].no_major_star` / `borrowed_major_stars` | Vô chính diệu và chính tinh mượn từ cung đối (kèm miếu hãm tại cung gốc) |
+| `horoscope.xiaoxian` | Tiểu hạn (小限): 寅午戌起辰, 申子辰起戌, 巳酉丑起未, 亥卯未起丑; nam thuận nữ nghịch |
 | `warnings` | 需要向用户说明的口径或不确定性 |
 
 解读时分清本命四化、大限四化、流年四化，不要混在一起说；用户问流年时，先讲当前大限，再叠加流年，不要跳过大限。

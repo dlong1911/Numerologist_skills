@@ -16,6 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from lunar_python import Lunar, LunarYear, Solar
+from lunar_python.util import LunarUtil
+
+import vn_calendar as VN
 
 DEFAULT_RULESET = "ziwei-sanhe-v1"
 
@@ -131,6 +134,16 @@ LATE_ZI_RULES = {
 }
 
 GENDER_ALIASES = {"男": "男", "male": "男", "m": "男", "女": "女", "female": "女", "f": "女"}
+LUNAR_CALENDARS = {
+    "vn": "âm lịch Việt Nam (kinh tuyến giờ pháp định: UTC+8 trước 8/8/1967; miền Bắc UTC+7 từ 8/8/1967, miền Nam từ 13/6/1975)",
+    "cn": "农历（中国，UTC+8，lunar_python）",
+}
+
+# 截路空亡（Triệt）按年干；旬空（Tuần）按年干支所在旬
+JIELU = {"甲": "申酉", "己": "申酉", "乙": "午未", "庚": "午未", "丙": "辰巳", "辛": "辰巳",
+         "丁": "寅卯", "壬": "寅卯", "戊": "子丑", "癸": "子丑"}
+# 小限起宫（按年支三合组），男顺女逆
+XIAOXIAN_START = {"寅午戌": "辰", "申子辰": "戌", "巳酉丑": "未", "亥卯未": "丑"}
 
 
 @dataclass
@@ -145,6 +158,11 @@ class BirthInfo:
     late_zi_rule: str
     original_input: Any
     warnings: list[str]
+    lunar_calendar: str = "vn"
+    birth_region: str | None = None
+
+
+JIAZI_INDEX = {STEMS[i % 10] + BRANCHES[i % 12]: i for i in range(60)}
 
 
 def b(name: str) -> int:
@@ -178,7 +196,15 @@ def parse_datetime_string(value: str) -> dict[str, int]:
     }
 
 
-def lunar_to_solar_date(year: int, month: int, day: int, is_leap: bool) -> date:
+def lunar_to_solar_date(year: int, month: int, day: int, is_leap: bool,
+                        lunar_calendar: str = "cn", region: str | None = None) -> date:
+    if lunar_calendar == "vn":
+        try:
+            return VN.vn_lunar_to_solar(year, month, day, is_leap, region)
+        except ValueError as exc:
+            if is_leap and "không tồn tại" in str(exc):
+                raise ValueError(f"农历 {year} 年没有闰{month}月（{exc}）") from exc
+            raise
     if is_leap and LunarYear.fromYear(year).getLeapMonth() != month:
         raise ValueError(f"农历 {year} 年没有闰{month}月")
     lunar = Lunar.fromYmd(year, -month if is_leap else month, day)
@@ -211,10 +237,14 @@ def normalize_input(payload: dict[str, Any]) -> BirthInfo:
     if not (0 <= raw["hour"] <= 23 and 0 <= raw["minute"] <= 59):
         raise ValueError("出生时间超出范围，小时应为 0-23，分钟 0-59")
 
+    lunar_calendar = str(payload.get("lunar_calendar") or "vn").strip().lower()
+    if lunar_calendar not in LUNAR_CALENDARS:
+        raise ValueError(f"lunar_calendar 只接受 {sorted(LUNAR_CALENDARS)}")
+    region = VN.resolve_region(payload.get("birth_region"), payload.get("latitude"))
     if calendar_type == "solar":
         solar_date = date(raw["year"], raw["month"], raw["day"])
     elif calendar_type == "lunar":
-        solar_date = lunar_to_solar_date(raw["year"], raw["month"], raw["day"], is_leap)
+        solar_date = lunar_to_solar_date(raw["year"], raw["month"], raw["day"], is_leap, lunar_calendar, region)
     else:
         raise ValueError(f"不支持的 calendar_type: {calendar_type}（只接受 solar 或 lunar）")
 
@@ -248,6 +278,8 @@ def normalize_input(payload: dict[str, Any]) -> BirthInfo:
         late_zi_rule=late_zi_rule,
         original_input=raw_input,
         warnings=warnings,
+        lunar_calendar=lunar_calendar,
+        birth_region=region,
     )
 
 
@@ -265,10 +297,15 @@ def resolve_calendar(info: BirthInfo) -> dict[str, Any]:
         chart_date = info.solar_date + timedelta(days=1)
         day_rollover = True
 
-    lunar = Solar.fromYmd(chart_date.year, chart_date.month, chart_date.day).getLunar()
-    lunar_month = abs(lunar.getMonth())
-    is_leap = lunar.getMonth() < 0
-    lunar_day = lunar.getDay()
+    if info.lunar_calendar == "vn":
+        lunar_year, lunar_month, lunar_day, is_leap = VN.vn_solar_to_lunar(chart_date, info.birth_region)
+        year_stem, year_branch = STEMS[(lunar_year - 4) % 10], BRANCHES[(lunar_year - 4) % 12]
+        lunar_text = f"{year_stem}{year_branch}年{'闰' if is_leap else ''}{LunarUtil.MONTH[lunar_month]}月{LunarUtil.DAY[lunar_day]}"
+    else:
+        lunar = Solar.fromYmd(chart_date.year, chart_date.month, chart_date.day).getLunar()
+        lunar_year, lunar_month, is_leap, lunar_day = lunar.getYear(), abs(lunar.getMonth()), lunar.getMonth() < 0, lunar.getDay()
+        year_stem, year_branch = STEMS[lunar.getYearGanIndex()], BRANCHES[lunar.getYearZhiIndex()]
+        lunar_text = f"{lunar.getYearInGanZhi()}年{lunar.getMonthInChinese()}月{lunar.getDayInChinese()}"
 
     chart_month = lunar_month
     if is_leap:
@@ -276,12 +313,10 @@ def resolve_calendar(info: BirthInfo) -> dict[str, Any]:
         if rule == "next" or (rule == "split_15" and lunar_day > 15):
             chart_month = lunar_month % 12 + 1
 
-    year_stem = STEMS[lunar.getYearGanIndex()]
-    year_branch = BRANCHES[lunar.getYearZhiIndex()]
     return {
         "chart_solar_date": chart_date,
         "day_rollover": day_rollover,
-        "lunar_year": lunar.getYear(),
+        "lunar_year": lunar_year,
         "lunar_month": lunar_month,
         "lunar_day": lunar_day,
         "is_leap_month": is_leap,
@@ -289,7 +324,8 @@ def resolve_calendar(info: BirthInfo) -> dict[str, Any]:
         "year_stem": year_stem,
         "year_branch": year_branch,
         "hour_index": hour_idx,
-        "lunar_text": f"{lunar.getYearInGanZhi()}年{lunar.getMonthInChinese()}月{lunar.getDayInChinese()}",
+        "lunar_text": lunar_text,
+        "lunar_calendar": info.lunar_calendar,
     }
 
 
@@ -409,9 +445,16 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
         idx = wrap(ming_idx + direction * step)
         decadal_by_branch[idx] = {"start_age": ju_number + 10 * step, "end_age": ju_number + 10 * step + 9}
 
+    year_gz = JIAZI_INDEX[year_stem + year_branch]
+    xun_start = year_gz - year_gz % 10
+    xunkong = {wrap(xun_start + 10), wrap(xun_start + 11)}
+    jielu = {b(ch) for ch in JIELU[year_stem]}
+
     palaces = []
     for i, name in enumerate(PALACE_NAMES):
         idx = wrap(ming_idx - i)
+        own_major = [s for s in MAJOR_STARS if major[s] == idx]
+        opp = wrap(idx + 6)
         palaces.append({
             "name": name,
             "branch": BRANCHES[idx],
@@ -427,6 +470,14 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
             ],
             "adjective_stars": [s for s in adjective if adjective[s] == idx],
             "decadal": decadal_by_branch[idx],
+            "xunkong": idx in xunkong,
+            "jielu": idx in jielu,
+            "no_major_star": not own_major,
+            "borrowed_major_stars": [] if own_major else [
+                {"name": s, "from_branch": BRANCHES[opp], "from_palace": palace_name_by_branch[opp],
+                 "brightness_at_source": BRIGHTNESS[s][opp]}
+                for s in MAJOR_STARS if major[s] == opp
+            ],
         })
 
     return {
@@ -443,6 +494,9 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
         "palace_name_by_branch": palace_name_by_branch,
         "stems_by_branch": stems_by_branch,
         "decadal_by_branch": decadal_by_branch,
+        "xunkong": sorted(xunkong),
+        "jielu": sorted(jielu),
+        "gender": info.gender,
     }
 
 
@@ -491,6 +545,12 @@ def build_horoscope(chart: dict[str, Any], query_year: int) -> dict[str, Any]:
         },
         "decadal": None,
     }
+    start = b(XIAOXIAN_START[SANHE_GROUP[cal["year_branch"]]])
+    step = 1 if chart["gender"] == "男" else -1
+    xx = wrap(start + step * (nominal_age - 1))
+    result["xiaoxian"] = {"branch": BRANCHES[xx], "natal_palace": names[xx], "nominal_age": nominal_age,
+                          "rule": f"{SANHE_GROUP[cal['year_branch']]}年起{XIAOXIAN_START[SANHE_GROUP[cal['year_branch']]]}，"
+                                  f"{'男顺' if step == 1 else '女逆'}，每虚岁一宫"}
     for idx, span in chart["decadal_by_branch"].items():
         if span["start_age"] <= nominal_age <= span["end_age"]:
             stem = chart["stems_by_branch"][idx]
@@ -543,6 +603,8 @@ def build_output(payload: dict[str, Any]) -> dict[str, Any]:
             "year_ganzhi": cal["year_stem"] + cal["year_branch"],
             "year_yinyang": "阳" if STEMS.index(cal["year_stem"]) % 2 == 0 else "阴",
             "hour_branch": BRANCHES[cal["hour_index"]] + "时",
+            "lunar_calendar": LUNAR_CALENDARS[info.lunar_calendar],
+            "birth_region": info.birth_region,
         },
         "ruleset": {
             "id": str(payload.get("ruleset") or DEFAULT_RULESET),
@@ -565,6 +627,8 @@ def build_output(payload: dict[str, Any]) -> dict[str, Any]:
             "shen_zhu": SHEN_ZHU[b(cal["year_branch"])],
             "decadal_direction": "顺行" if chart["direction"] == 1 else "逆行",
             "year_sihua": chart["year_sihua"],
+            "xunkong": [BRANCHES[i] for i in chart["xunkong"]],
+            "jielu": [BRANCHES[i] for i in chart["jielu"]],
             "star_index": {name: BRANCHES[idx] for name, idx in chart["star_index"].items()},
             "palaces": chart["palaces"],
             "self_check": check,

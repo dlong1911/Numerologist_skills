@@ -28,6 +28,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from lunar_python import Lunar, LunarYear, Solar
 from lunar_python.util import LunarUtil
 
+import vn_calendar as VN
+
 DEFAULT_RULESET = "bazi-ziping-v1"
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 JIEQI_TIMEZONE = "UTC+08:00"  # lunar_python 节气时刻所用的北京时间（固定 UTC+8，不含 1986-1991 夏令时）
@@ -187,6 +189,9 @@ class BirthInfo:
     query_years: list[int]
     original_input: Any
     warnings: list[str]
+    lunar_calendar: str = "cn"
+    birth_region: str | None = None
+    utc_offset_source: dict | None = None
 
 
 def normalize_input(payload: dict[str, Any]) -> BirthInfo:
@@ -213,17 +218,32 @@ def normalize_input(payload: dict[str, Any]) -> BirthInfo:
     if not (0 <= raw["hour"] <= 23 and 0 <= raw["minute"] <= 59):
         raise ValueError("出生时间超出范围")
 
+    is_vn = tz_name in VN.VN_ZONES
+    region = VN.resolve_region(payload.get("birth_region"), payload.get("latitude", location.get("latitude")))
+    lunar_calendar = str(payload.get("lunar_calendar") or ("vn" if is_vn else "cn")).strip().lower()
+    if lunar_calendar not in ("vn", "cn"):
+        raise ValueError("lunar_calendar 只支持 vn / cn")
     if calendar_type == "solar":
         local_date = date(raw["year"], raw["month"], raw["day"])
     elif calendar_type == "lunar":
         is_leap = bool(payload.get("is_leap_month", False))
-        if is_leap and LunarYear.fromYear(raw["year"]).getLeapMonth() != raw["month"]:
-            raise ValueError(f"农历 {raw['year']} 年没有闰{raw['month']}月")
-        solar = Lunar.fromYmd(raw["year"], -raw["month"] if is_leap else raw["month"], raw["day"]).getSolar()
-        local_date = date(solar.getYear(), solar.getMonth(), solar.getDay())
+        if lunar_calendar == "vn":
+            local_date = VN.vn_lunar_to_solar(raw["year"], raw["month"], raw["day"], is_leap, region)
+        else:
+            if is_leap and LunarYear.fromYear(raw["year"]).getLeapMonth() != raw["month"]:
+                raise ValueError(f"农历 {raw['year']} 年没有闰{raw['month']}月")
+            solar = Lunar.fromYmd(raw["year"], -raw["month"] if is_leap else raw["month"], raw["day"]).getSolar()
+            local_date = date(solar.getYear(), solar.getMonth(), solar.getDay())
     else:
         raise ValueError(f"不支持的 calendar_type: {calendar_type}（只支持 solar / lunar）")
-    local_dt = datetime(local_date.year, local_date.month, local_date.day, raw["hour"], raw["minute"], tzinfo=tz)
+    naive = datetime(local_date.year, local_date.month, local_date.day, raw["hour"], raw["minute"])
+    offset_source = None
+    if is_vn:
+        # tzdata's Asia/Ho_Chi_Minh is South Vietnam only; use the regional table (vn_calendar.py)
+        tz, offset_source = VN.vn_tzinfo(naive, region)
+        if offset_source["uncertain"]:
+            warnings.append(f"Múi giờ {naive:%d/%m/%Y} chưa chắc chắn (UTC+{offset_source['hours']:g}): {offset_source['note']}")
+    local_dt = naive.replace(tzinfo=tz)
 
     gender = GENDER_ALIASES.get(str(payload.get("gender") or "").strip().lower())
     if gender is None:
@@ -253,6 +273,7 @@ def normalize_input(payload: dict[str, Any]) -> BirthInfo:
         calendar_type=calendar_type, local_dt=local_dt, gender=gender, timezone=tz_name,
         longitude=longitude, use_true_solar_time=use_tst, late_zi_rule=late_zi_rule,
         yun_sect=yun_sect, query_years=query_years, original_input=raw_input, warnings=warnings,
+        lunar_calendar=lunar_calendar, birth_region=region, utc_offset_source=offset_source,
     )
 
 
@@ -598,6 +619,9 @@ def build_output(payload: dict[str, Any]) -> dict[str, Any]:
             "longitude": info.longitude,
             "use_true_solar_time": info.use_true_solar_time,
             "late_zi_rule": info.late_zi_rule,
+            "lunar_calendar": info.lunar_calendar,
+            "birth_region": info.birth_region,
+            "utc_offset_source": info.utc_offset_source,
             "yun_sect": info.yun_sect,
             "query_years": info.query_years,
         },

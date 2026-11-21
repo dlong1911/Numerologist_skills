@@ -346,7 +346,7 @@ IZTRO_CASES = json.loads((FIXTURES / "iztro_cases.json").read_text(encoding="utf
 
 @pytest.mark.parametrize("case", IZTRO_CASES, ids=lambda c: f"{c['input']['birth_time']}-{c['input']['gender']}")
 def test_matches_iztro(case):
-    out = build_output({"calendar_type": "solar", "leap_month_rule": "split_15", **case["input"]})
+    out = build_output({"calendar_type": "solar", "leap_month_rule": "split_15", "lunar_calendar": "cn", **case["input"]})
     chart = out["chart"]
     ref = case["iztro"]
     assert chart["ming_gong"]["branch"] == ref["ming"]
