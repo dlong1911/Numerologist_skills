@@ -9,8 +9,9 @@
   时刻是北京时间（UTC+8），所以先把出生时刻换算成北京时间（固定 UTC+8）再定年、月柱与起运，
   这样非中国时区（如越南 UTC+7）出生也能正确判断节气边界。
 - 日柱、时柱按出生地的民用时间（或开启 use_true_solar_time 时的真太阳时）判断。
-- 子时默认「夜子时」口径（late_zi_rule=same_day）：23:00-24:00 日柱仍取当日，
-  时柱为子时（时干按次日五鼠遁，即 lunar_python sect=2）；next_day 则 23:00 起日柱换次日。
+- 子时默认 23:00 起换日（late_zi_rule=next_day，与紫微脚本一致）：日柱取次日，时柱为次日子时；
+  same_day 为「夜子时」：日柱仍取当日，时干按次日起（lunar_python sect=2）。23 点出生时输出 chart.late_zi，
+  给出另一口径的日柱/时柱，供界面提示。
 """
 from __future__ import annotations
 
@@ -257,7 +258,7 @@ def normalize_input(payload: dict[str, Any]) -> BirthInfo:
     if longitude is not None and not -180 <= longitude <= 180:
         raise ValueError("longitude 超出范围")
 
-    late_zi_rule = str(payload.get("late_zi_rule") or "same_day").strip()
+    late_zi_rule = str(payload.get("late_zi_rule") or "next_day").strip()
     if late_zi_rule not in LATE_ZI_RULES:
         raise ValueError(f"late_zi_rule 只支持 {list(LATE_ZI_RULES)}")
     yun_sect = int(payload.get("yun_sect") or 2)
@@ -477,6 +478,21 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
     local_ec.setSect(sect)
 
     gz = {"year": bj_ec.getYear(), "month": bj_ec.getMonth(), "day": local_ec.getDay(), "hour": local_ec.getTime()}
+    late_zi = None
+    if times["chart_dt"].hour == 23:
+        alt_rule = "same_day" if info.late_zi_rule == "next_day" else "next_day"
+        alt_ec = solar_from_naive(times["chart_dt"]).getLunar().getEightChar()
+        alt_ec.setSect(2 if alt_rule == "same_day" else 1)
+        late_zi = {
+            "applied_rule": info.late_zi_rule,
+            "alternative_rule": alt_rule,
+            "alternative_day_pillar": alt_ec.getDay(),
+            "alternative_hour_pillar": alt_ec.getTime(),
+            "note_vi": (f"Sinh sau 23:00 (giờ Tý): lá số tính sang ngày hôm sau. Nếu giữ ngày cũ, trụ ngày là "
+                        f"{alt_ec.getDay()}, trụ giờ là {alt_ec.getTime()}." if info.late_zi_rule == "next_day" else
+                        f"Sinh sau 23:00 (giờ Tý): lá số giữ ngày cũ. Nếu tính sang ngày hôm sau, trụ ngày là "
+                        f"{alt_ec.getDay()}, trụ giờ là {alt_ec.getTime()}."),
+        }
     day_stem = gz["day"][0]
     pillars = {k: pillar_detail(k, gz[k], day_stem) for k in PILLAR_KEYS}
     wx = wangxiang(gz["month"][1])
@@ -591,6 +607,7 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
         "element_counts": element_counts(pillars),
         "strength_factors": strength_factors(pillars, day_stem, wx),
         "natal_interactions": detect_interactions(natal_items),
+        "late_zi": late_zi,
         "dayun": {
             "direction": "顺排" if yun.isForward() else "逆排",
             "start": {"years": yun.getStartYear(), "months": yun.getStartMonth(), "days": yun.getStartDay(),

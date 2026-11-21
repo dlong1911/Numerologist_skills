@@ -115,7 +115,7 @@ def run_case(c):
     try:
         bz = B.build_output({"calendar_type": "solar", "birth_time": bt, "gender": g_cn, "timezone": "Asia/Ho_Chi_Minh",
                              "latitude": i["latitude"], "longitude": i["longitude"], "use_true_solar_time": True,
-                             "late_zi_rule": "same_day", "query_years": [2026]})
+                             "query_years": [2026]})
         ch = bz["chart"]
         out["bazi"] = {
             "utc_offset_hours": ch["times"]["utc_offset_hours"],
@@ -127,6 +127,7 @@ def run_case(c):
             "dayun": [p["ganzhi"] for p in ch["dayun"]["pillars"][:8]],
             "dayun_start_year": ch["dayun"]["pillars"][0]["start_year"],
             "interactions": sorted(x["detail"] for x in ch["natal_interactions"]),
+            "late_zi_flag": ch["late_zi"] is not None,
         }
     except Exception as e:  # noqa: BLE001
         out["bazi"] = {"error": str(e)}
@@ -140,6 +141,7 @@ def run_case(c):
                 major[STAR_VI[s["name"]]] = BR.index(p["branch"])
         out["tuvi"] = {
             "late_zi_rule": "next_day",
+            "late_zi_flag": zw["calendar"]["late_zi"] is not None,
             "lunar": [cal["lunar_year"], cal["lunar_month"], cal["lunar_day"], cal["is_leap_month"]],
             "year_ganzhi": cal["year_ganzhi"],
             "menh": BR.index(chz["ming_gong"]["branch"]),
@@ -183,7 +185,7 @@ def run_case(c):
 for c in cases:
     c["python"] = run_case(c)
 meta = {"generator": "Numerologist_skills/audit/make_golden.py", "count": len(cases),
-        "notes": ["bazi: Asia/Ho_Chi_Minh + vn_calendar North/South table, true solar time on, late_zi same_day",
+        "notes": ["bazi: Asia/Ho_Chi_Minh + vn_calendar North/South table, true solar time on, late_zi next_day (default)",
                   "tuvi: lunar_calendar vn, civil time, late_zi next_day (Python default)",
                   "numerology: phillips life path, y_rule vowel, query 2026-11-20",
                   "astro: kerykeion 6.1.0, Placidus, tropical; mean node listed for comparison with JS"]}

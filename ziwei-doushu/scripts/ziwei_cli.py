@@ -571,8 +571,22 @@ def build_output(payload: dict[str, Any]) -> dict[str, Any]:
     cal = chart["calendar"]
     check = self_check(chart)
     warnings = list(info.warnings)
-    if cal["day_rollover"]:
-        warnings.append("出生于 23 点后，已按次日子时排盘（农历日期取次日）；若用户既定口径不换日，请改用 late_zi_rule=same_day 重排。")
+    late_zi = None
+    if info.hour == 23:
+        alt_rule = "same_day" if info.late_zi_rule == "next_day" else "next_day"
+        alt = resolve_calendar(BirthInfo(**{**info.__dict__, "late_zi_rule": alt_rule}))
+        late_zi = {
+            "applied_rule": info.late_zi_rule,
+            "alternative_rule": alt_rule,
+            "alternative_lunar": {"year": alt["lunar_year"], "month": alt["lunar_month"], "day": alt["lunar_day"],
+                                  "is_leap_month": alt["is_leap_month"]},
+            "note_vi": (f"Sinh sau 23:00 (giờ Tý): lá số tính sang ngày hôm sau (âm lịch {cal['lunar_day']}/{cal['lunar_month']}). "
+                        f"Nếu giữ ngày cũ, ngày âm là {alt['lunar_day']}/{alt['lunar_month']} và lá số sẽ khác."
+                        if info.late_zi_rule == "next_day" else
+                        f"Sinh sau 23:00 (giờ Tý): lá số giữ ngày cũ (âm lịch {cal['lunar_day']}/{cal['lunar_month']}). "
+                        f"Nếu tính sang ngày hôm sau, ngày âm là {alt['lunar_day']}/{alt['lunar_month']} và lá số sẽ khác."),
+        }
+        warnings.append(late_zi["note_vi"])
     if cal["is_leap_month"]:
         origin = "默认算法" if info.leap_month_rule_source == "default" else "调用方指定"
         warnings.append(
@@ -603,6 +617,7 @@ def build_output(payload: dict[str, Any]) -> dict[str, Any]:
             "year_ganzhi": cal["year_stem"] + cal["year_branch"],
             "year_yinyang": "阳" if STEMS.index(cal["year_stem"]) % 2 == 0 else "阴",
             "hour_branch": BRANCHES[cal["hour_index"]] + "时",
+            "late_zi": late_zi,
             "lunar_calendar": LUNAR_CALENDARS[info.lunar_calendar],
             "birth_region": info.birth_region,
         },

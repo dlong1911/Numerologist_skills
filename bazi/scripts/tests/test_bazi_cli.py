@@ -106,12 +106,14 @@ class TestEdgeCases:
         assert any("节令" in w for w in after["warnings"])
 
     def test_late_zi_same_day(self):
-        out = run(birth_time="2024-01-01 23:30")
+        out = run(birth_time="2024-01-01 23:30", late_zi_rule="same_day")
         assert out["chart"]["bazi"] == "癸卯 甲子 甲子 丙子"
 
     def test_late_zi_next_day(self):
-        out = run(birth_time="2024-01-01 23:30", late_zi_rule="next_day")
+        out = run(birth_time="2024-01-01 23:30")                      # default next_day
         assert out["chart"]["bazi"] == "癸卯 甲子 乙丑 丙子"
+        lz = out["chart"]["late_zi"]
+        assert (lz["applied_rule"], lz["alternative_day_pillar"]) == ("next_day", "甲子")
 
     def test_lunar_leap_month(self):
         out = run(calendar_type="lunar", birth_time="2023-02-15 10:00", is_leap_month=True)

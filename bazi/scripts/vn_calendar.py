@@ -150,10 +150,10 @@ _COMMON = [
 ]
 VN_OFFSETS = {
     "north": _COMMON + [
-        (datetime(1954, 10, 10), 8.0, "WIKI-VC;TZLIST11",
-         "UNCERTAIN: nguồn mâu thuẫn. [WIKI-VC] và [TZLIST11] cho rằng miền Bắc ở +8 tới 8/8/1967; "
+        (datetime(1954, 10, 10), 7.0, "TZ;GABRIEL",
+         "UNCERTAIN: nguồn mâu thuẫn, mặc định UTC+7. [WIKI-VC] và [TZLIST11] cho rằng miền Bắc ở +8 tới 8/8/1967; "
          "sách Gabriel (Traité de l'heure dans le monde, 1991) ghi +7 từ 15/4/1955 tới 1/1/1960; "
-         "tzdata gán miền Bắc vào Asia/Bangkok (+7) nhưng chỉ cam kết số liệu từ 1970."),
+         "tzdata gán miền Bắc vào Asia/Bangkok (+7) nhưng chỉ cam kết số liệu từ 1970. Giờ sinh có thể lệch 1 tiếng."),
         (NORTH_1967, 7.0, "WIKI-VC;TZLIST11", ""),
     ],
     "south": _COMMON + [
@@ -169,6 +169,7 @@ SOURCES = {
     "VNDQ": "Việt Nam Dân Quốc Công Báo số 1 (29/9/1945), tr. 13",
     "WIKI-VC": "en.wikipedia.org/wiki/Vietnamese_calendar, dẫn Aslaksen, The Mathematics of the Chinese Calendar, tr. 29-30",
     "TZLIST11": "Alois Treindl, tz mailing list 19/5/2011 (mm.icann.org/pipermail/tz/2011-May/008539.html)",
+    "GABRIEL": "Gabriel, Traité de l'heure dans le monde (1991), theo Treindl, tz mailing list 18/5/2011 (008537)",
 }
 
 

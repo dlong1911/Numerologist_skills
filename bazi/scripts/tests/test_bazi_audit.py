@@ -238,7 +238,7 @@ def test_canonical_is_clearly_weak():
 
 # ------------------------------------------------------------ consistency with ziwei (shared calendar)
 
-@pytest.mark.xfail(strict=True, reason="AUDIT F4: bazi defaults to same_day, ziwei to next_day for 23:00-24:00")
+# AUDIT F4 (fixed): both default to next_day
 def test_late_zi_default_consistent_with_ziwei():
     import ziwei_cli as Z
     z = Z.build_output({"calendar_type": "solar", "birth_time": "1999-03-10 23:30", "gender": "男"})
@@ -253,3 +253,13 @@ def test_ziwei_vietnamese_lunar_new_year_1985():
     # [VNL] 1985-02-01 is month 1 day 12 of 乙丑 in Vietnam; in China it is still 甲子 month 12.
     z = Z.build_output({"calendar_type": "solar", "birth_time": "1985-02-01 12:00", "gender": "男"})
     assert (z["calendar"]["year_ganzhi"], z["calendar"]["lunar_month"], z["calendar"]["lunar_day"]) == ("乙丑", 1, 12)
+
+
+def test_late_zi_flag_only_for_23h():
+    import ziwei_cli as Z
+    b = run(birth_time="1999-03-10 23:30")["chart"]
+    assert b["late_zi"]["alternative_rule"] == "same_day" and b["late_zi"]["alternative_day_pillar"] == "辛酉"
+    assert run(birth_time="1999-03-10 22:30")["chart"]["late_zi"] is None
+    z = Z.build_output({"calendar_type": "solar", "birth_time": "1999-03-10 23:30", "gender": "男"})["calendar"]
+    assert z["late_zi"]["applied_rule"] == "next_day" and z["late_zi"]["alternative_lunar"]["day"] == 23
+    assert z["lunar_day"] == 24

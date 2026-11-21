@@ -56,7 +56,7 @@ def test_offsets(when, region, hours):
 
 def test_north_1955_1967_marked_uncertain():
     off = V.vn_offset(datetime(1962, 1, 1), "north")
-    assert off["uncertain"] and off["hours"] == 8.0
+    assert off["uncertain"] and off["hours"] == 7.0   # sources conflict; default +7 (user decision)
 
 
 def test_region_from_latitude():
