@@ -108,7 +108,9 @@ python "bazi/scripts/bazi_cli.py" \
 - 输出有 `error` 字段时，按错误信息向用户补问，不要改用手算。
 - 脚本不可用时，明确告诉用户当前需要脚本才能正式排盘，不要手算顶替。
 - 脚本输出的盘面不要改动；`chart.self_check` 有 false 时不要使用该盘，向用户报告。
-- `strength_factors.heuristic_score` 只是启发式参考分，身强身弱、格局、喜用神仍须按第三、四步结合原局判断。
+- `strength_factors.heuristic_score` 已弃用（AUDIT F3），不得引用。旺衰与喜用以 `strength_assessment` 为准：
+  `level` 为 `weak`/`strong` 时可引用 `useful_gods`（扶抑口径，未考虑调候）；为 `undetermined`、`possible_follow`、`possible_dominant` 时，
+  不得自行断定身强身弱或喜用神，只能列出 `criteria`、`force_by_role` 等依据并说明需要人工判断（可能是从格/专旺）。
 
 **读取脚本输出**
 

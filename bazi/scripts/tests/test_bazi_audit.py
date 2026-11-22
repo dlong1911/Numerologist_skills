@@ -215,25 +215,68 @@ def test_lunar_input_where_calendars_agree():
     assert o["normalized_input"]["local_solar_time"] == "1999-03-11 05:15"
 
 
-# ------------------------------------------------------------ strength heuristic (AUDIT F3: open, see STAGE1.md §2)
+# ------------------------------------------------------------ strength assessment (AUDIT F3, fixed per STAGE1.md §2)
+import itertools
+import random
 
-def _score(gz4):
-    pillars = {k: B.pillar_detail(k, g, gz4[2][0]) for k, g in zip(B.PILLAR_KEYS, gz4)}
-    return B.strength_factors(pillars, gz4[2][0], B.wangxiang(gz4[1][1]))["heuristic_score"]
+sys.path.insert(0, str(ROOT / "audit"))
+import strength_proposal as P  # noqa: E402  (benchmark: 《滴天髓闡微》, zh.wikisource)
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT F3: branches only count as roots; 印 in branches adds nothing, "
-                                       "食伤/财/官 in branches subtract nothing")
+def _assess(gz4):
+    return B.strength_assessment(dict(zip(B.PILLAR_KEYS, gz4)))
+
+
 def test_branch_resource_raises_strength():
     canon = ["己卯", "丁卯", "壬戌", "癸卯"]          # two 卯 (伤官) on year/hour
     with_yin = ["己酉", "丁卯", "壬戌", "癸酉"]       # same stems, 酉 (正印) on year/hour
-    assert _score(with_yin) > _score(canon)
+    assert _assess(with_yin)["support_ratio"] > _assess(canon)["support_ratio"]
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT F3: 失令+无根+仅一比劫 should be clearly weak, score is −0.2")
-def test_canonical_is_clearly_weak():
-    # [HAND] 得令 no (卯 = 伤官, 休), 得地 no (no 亥子申辰丑), 得势 1/3 stems → 身弱 by 子平 three-criteria.
-    assert run(**CANON)["chart"]["strength_factors"]["heuristic_score"] <= -1.0
+def test_canonical_needs_judgement_two_readings():
+    # User decision (STAGE1 review): canonical chart = "cần luận" with two readings:
+    #   thân nhược → dụng Kim; tòng nhi or hóa Mộc → dụng Mộc.
+    a = run(**CANON)["chart"]["strength_assessment"]
+    assert a["level"] == "possible_follow" and a["useful_gods"] is None
+    assert a["criteria"]["count"] == 0 and a["support_ratio"] < 0.15
+    got = [(r["name"], r["gods"]["dung"]["element"]) for r in a["readings"]]
+    assert got == [("thân nhược", "金"), ("tòng nhi hoặc hóa Mộc", "木")]
+    weak, follow = a["readings"]
+    assert [h["element"] for h in weak["gods"]["hy"]] == ["水"] and weak["gods"]["ky"]["element"] == "火"
+    assert follow["gods"]["ky"]["element"] == "金"
+
+
+@pytest.mark.parametrize("case", P.BENCH[:-1], ids=[str(c[0]) for c in P.BENCH[:-1]])
+def test_never_contradicts_book(case):
+    n, gz, book_strength, book_dung, _ = case
+    a = _assess(gz.split())
+    if a["level"] == "weak":
+        assert book_strength == "nhược"
+        assert a["useful_gods"]["dung"]["element"] == book_dung
+    if a["level"] == "strong":
+        assert book_strength == "vượng"
+        assert a["useful_gods"]["dung"]["element"] == book_dung
+
+
+def test_book_chart_8_weak_uses_resource():
+    # 癸亥 甲子 丁酉 癸卯: 任: "身衰印作和", "杀重用印" → 用木
+    a = _assess("癸亥 甲子 丁酉 癸卯".split())
+    assert a["level"] == "weak" and a["useful_gods"]["dung"]["element"] == "木"
+
+
+def test_book_chart_19_follow_flagged():
+    # 丁卯 壬寅 癸卯 丙辰: 任: "格成水木从儿"
+    assert _assess("丁卯 壬寅 癸卯 丙辰".split())["level"] == "possible_follow"
+
+
+def test_xi_never_controls_yong_random():
+    rng = random.Random(7)
+    for _ in range(3000):
+        gz4 = [B.JIAZI[rng.randrange(60)] for _ in range(4)]
+        for r in _assess(gz4)["readings"]:
+            g = r["gods"]
+            assert all(B.CONTROLS[h["element"]] != g["dung"]["element"] for h in g["hy"])
+            assert B.CONTROLS[g["ky"]["element"]] == g["dung"]["element"]
 
 
 # ------------------------------------------------------------ consistency with ziwei (shared calendar)

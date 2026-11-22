@@ -395,8 +395,143 @@ def strength_factors(pillars: dict[str, dict[str, Any]], day_stem: str, wx: dict
         "roots": roots,
         "visible_support_stems": visible_support,
         "heuristic_score": round(score, 2),
-        "heuristic_note": "启发式分数（得令 + 通根 + 透出比印 − 透出克泄耗），>0 偏强、<0 偏弱，仅作参考；"
-                          "身强身弱、格局与喜用必须结合原局由解读者判断。",
+        "heuristic_note": "DEPRECATED (AUDIT F3): chỉ xét thiên can và gốc, bỏ qua địa chi. Không dùng để kết luận "
+                          "vượng/nhược hay chọn dụng thần; dùng strength_assessment.",
+    }
+
+
+# ---------------------------------------------------------------- 旺衰判定与喜用（只在明确时下结论）
+# Weights fixed before benchmarking (audit/strength_proposal.py, STAGE1.md §2).
+ROLE_STEM_W = {"year": 1.0, "month": 1.0, "hour": 1.0}
+ROLE_BRANCH_W = {"year": 1.0, "month": 3.0, "day": 1.5, "hour": 1.0}   # 月令 ×3，日支 ×1.5
+UNROOTED_STEM_W = 0.6
+ROLE_VI = {"比劫": "tỷ kiếp", "印": "ấn", "食伤": "thực thương", "财": "tài", "官杀": "quan sát"}
+ELEMENT_VI = {"木": "Mộc", "火": "Hỏa", "土": "Thổ", "金": "Kim", "水": "Thủy"}
+
+
+def role_of(dm_el: str, el: str) -> str:
+    if el == dm_el:
+        return "比劫"
+    if GENERATES[el] == dm_el:
+        return "印"
+    if GENERATES[dm_el] == el:
+        return "食伤"
+    if CONTROLS[dm_el] == el:
+        return "财"
+    return "官杀"
+
+
+def element_of_role(dm_el: str, role: str) -> str:
+    return next(el for el in ELEMENTS if role_of(dm_el, el) == role)
+
+
+def _gods(dm_el: str, dung_el: str, hy_els: list[str], school: str) -> dict[str, Any]:
+    for h in hy_els:
+        if CONTROLS[h] == dung_el:
+            raise AssertionError("喜神不得克用神")
+    ky = next(el for el in ELEMENTS if CONTROLS[el] == dung_el)
+    item = lambda el: {"element": el, "element_vi": ELEMENT_VI[el], "role": role_of(dm_el, el),
+                       "role_vi": ROLE_VI[role_of(dm_el, el)]}
+    return {"school": school, "dung": item(dung_el), "hy": [item(h) for h in hy_els],
+            "ky": dict(item(ky), why="khắc dụng thần")}
+
+
+def possible_readings(gz: dict[str, str], level: str, by_role: dict[str, float], dm_el: str) -> list[dict[str, Any]]:
+    """Plausible readings of the chart, each with its own useful gods (STAGE1.md §2)."""
+    el_of = lambda r: element_of_role(dm_el, r)
+    out: list[tuple[str, str, list[str], str]] = []   # (name, dung, [hy], school)
+    if level in ("weak", "possible_follow", "undetermined"):
+        heaviest = max(("食伤", "财", "官杀"), key=by_role.get)
+        dung = "比劫" if heaviest == "财" else "印"          # 财多用比劫；杀重、伤重用印
+        out.append(("thân nhược", el_of(dung), [el_of("印" if dung == "比劫" else "比劫")], "phù ức, chưa xét điều hậu"))
+    if level in ("strong", "possible_dominant", "undetermined"):
+        if by_role["印"] > by_role["比劫"]:
+            dung = "财"
+        else:
+            dung = "官杀" if by_role["官杀"] > 0 else "食伤"
+        hy = {"财": "食伤", "官杀": "财", "食伤": "财"}[dung]
+        out.append(("thân vượng", el_of(dung), [el_of(hy)], "phù ức, chưa xét điều hậu"))
+    if level == "possible_follow":
+        heaviest = max(("食伤", "财", "官杀"), key=by_role.get)
+        name = {"食伤": "tòng nhi", "财": "tòng tài", "官杀": "tòng sát"}[heaviest]
+        hy = {"食伤": "财", "财": "食伤", "官杀": "财"}[heaviest]
+        out.append((name, el_of(heaviest), [el_of(hy)], "tòng cách"))
+    if level == "possible_dominant":
+        out.append(("chuyên vượng", dm_el, [el_of("印")], "chuyên vượng (thuận thế)"))
+    if level not in ("weak", "strong"):
+        # 化气: day stem combines with the adjacent month/hour stem and the month supports the result
+        for k in ("month", "hour"):
+            pair = frozenset((gz["day"][0], gz[k][0]))
+            hua = STEM_COMBOS.get(pair)
+            if hua and gz["day"][0] != gz[k][0] and SEASON_ELEMENT[gz["month"][1]] == hua:
+                hy = next(el for el in ELEMENTS if GENERATES[el] == hua)
+                out.append((f"hóa {ELEMENT_VI[hua]}", hua, [hy], f"hóa khí cách ({gz['day'][0]}{gz[k][0]}合化{hua}, sinh tháng {gz['month'][1]})"))
+                break
+    merged: list[dict[str, Any]] = []
+    for name, dung_el, hy_els, school in out:
+        same = next((m for m in merged if m["dung_element"] == dung_el), None)
+        if same:
+            same["names"].append(name)
+            same["schools"].append(school)
+            same["hy_elements"] += [h for h in hy_els if h not in same["hy_elements"]]
+        else:
+            merged.append({"names": [name], "schools": [school], "dung_element": dung_el, "hy_elements": list(hy_els)})
+    return [{"name": " hoặc ".join(m["names"]),
+             "gods": _gods(dm_el, m["dung_element"], m["hy_elements"], "; ".join(m["schools"]))} for m in merged]
+
+
+def strength_assessment(gz: dict[str, str]) -> dict[str, Any]:
+    """Day-master strength. A verdict is given only when the weighted support ratio and the
+    three classical criteria (得令/得地/得势) agree strongly; otherwise "cần luận" (needs judgement)
+    and no useful gods. Benchmark against 《滴天髓闡微》 in STAGE1.md: no formula reproduces the
+    book's verdicts reliably, so the script must not pretend to."""
+    dm = gz["day"][0]
+    dm_el = STEM_ELEMENT[dm]
+    hidden_els = {STEM_ELEMENT[h] for k in PILLAR_KEYS for h in HIDDEN_STEMS[gz[k][1]]}
+    by_role = {r: 0.0 for r in ROLE_VI}
+    for k in PILLAR_KEYS:
+        stem, branch = gz[k][0], gz[k][1]
+        if k != "day":
+            el = STEM_ELEMENT[stem]
+            by_role[role_of(dm_el, el)] += ROLE_STEM_W[k] * (1.0 if el in hidden_els else UNROOTED_STEM_W)
+        hs = HIDDEN_STEMS[branch]
+        for h, frac in zip(hs, HIDDEN_WEIGHTS[len(hs)]):
+            by_role[role_of(dm_el, STEM_ELEMENT[h])] += ROLE_BRANCH_W[k] * frac
+    support = by_role["比劫"] + by_role["印"]
+    ratio = support / sum(by_role.values())
+    sup = {"比劫", "印"}
+    de_ling = role_of(dm_el, STEM_ELEMENT[HIDDEN_STEMS[gz["month"][1]][0]]) in sup
+    strong_root = any(role_of(dm_el, STEM_ELEMENT[h]) == "比劫" for k in PILLAR_KEYS for h in HIDDEN_STEMS[gz[k][1]][:2])
+    de_di = strong_root or role_of(dm_el, STEM_ELEMENT[HIDDEN_STEMS[gz["day"][1]][0]]) in sup
+    de_shi = sum(role_of(dm_el, STEM_ELEMENT[gz[k][0]]) in sup for k in PILLAR_KEYS if k != "day") >= 2
+    n_criteria = de_ling + de_di + de_shi
+
+    if ratio < 0.15 and not strong_root:
+        level, verdict = "possible_follow", "Có thể là tòng cách (nhật chủ rất yếu, không có gốc ở bản khí/trung khí) — cần luận"
+    elif ratio > 0.85:
+        level, verdict = "possible_dominant", "Có thể là chuyên vượng/tòng vượng — cần luận"
+    elif ratio < 0.25 and n_criteria == 0:
+        level, verdict = "weak", "Thân nhược rõ"
+    elif ratio > 0.65 and n_criteria == 3:
+        level, verdict = "strong", "Thân vượng rõ"
+    else:
+        level, verdict = "undetermined", "Cần luận (các yếu tố không đủ rõ để kết luận vượng hay nhược)"
+
+    readings = possible_readings(gz, level, by_role, dm_el)
+    gods = readings[0]["gods"] if level in ("weak", "strong") else None
+    return {
+        "level": level,
+        "verdict_vi": verdict,
+        "support_ratio": round(ratio, 3),
+        "force_by_role": {ROLE_VI[r]: round(v, 2) for r, v in by_role.items()},
+        "criteria": {"dac_lenh": de_ling, "dac_dia": de_di, "dac_the": de_shi, "count": n_criteria},
+        "has_strong_root": strong_root,
+        "useful_gods": gods,
+        "readings": readings,
+        "method": "lực theo vai trò (can 1,0, can không gốc 0,6; chi năm 1,0, tháng 3,0, ngày 1,5, giờ 1,0; tàng can 0,6/0,3/0,1). "
+                  "Chỉ kết luận khi tỷ lệ hỗ trợ < 0,25 và 0/3 điều kiện (nhược), hoặc > 0,65 và 3/3 (vượng). "
+                  "useful_gods chỉ có khi đã kết luận; khi 'cần luận', readings liệt kê các cách đọc khả dĩ, "
+                  "mỗi cách có dụng/hỷ/kỵ riêng. Hỷ thần không bao giờ khắc dụng thần.",
     }
 
 
@@ -606,6 +741,7 @@ def build_chart(info: BirthInfo) -> dict[str, Any]:
         "wangxiang_xiuqiu": {"month_branch": gz["month"][1], "states": wx},
         "element_counts": element_counts(pillars),
         "strength_factors": strength_factors(pillars, day_stem, wx),
+        "strength_assessment": strength_assessment(gz),
         "natal_interactions": detect_interactions(natal_items),
         "late_zi": late_zi,
         "dayun": {
